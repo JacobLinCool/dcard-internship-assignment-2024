@@ -28,7 +28,8 @@ func main() {
 
 	go cacheUpdater(time.Second * time.Duration(ttlInt))
 
-	router := gin.Default()
+	router := gin.New()
+	router.Use(gin.Recovery())
 	api := router.Group("/api")
 	{
 		v1 := api.Group("/v1")
