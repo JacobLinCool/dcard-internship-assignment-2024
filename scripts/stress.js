@@ -1,8 +1,7 @@
 import http from "k6/http";
-import { URL } from "https://jslib.k6.io/url/1.0.0/index.js";
 
 export const options = {
-    vus: 300, // users
+    vus: 500, // users
     duration: "10s",
     // rps: 10500,
 };
@@ -15,19 +14,16 @@ const randomPlatform = () => ["android", "ios", "web", ""][Math.floor(Math.rando
 const randomCountry = () => ["US", "CA", "MX", "BR", "JP", "KR", "CN", "RU", "AU", "NZ", "TW", ""][Math.floor(Math.random() * 12)];
 
 export default function () {
-    const url = new URL("http://localhost:8080/api/v1/ad");
-
-    url.searchParams.append("offset", randomOffset());
-    url.searchParams.append("limit", randomLimit());
+    let url = `http://localhost:8080/api/v1/ad?offset=${randomOffset()}&limit=${randomLimit()}`;
 
     const age = randomAge();
-    if (age) url.searchParams.append("age", age);
+    if (age) url += `&age=${age}`;
     const gender = randomGender();
-    if (gender) url.searchParams.append("gender", gender);
+    if (gender) url += `&gender=${gender}`;
     const platform = randomPlatform();
-    if (platform) url.searchParams.append("platform", platform);
+    if (platform) url += `&platform=${platform}`;
     const country = randomCountry();
-    if (country) url.searchParams.append("country", country);
+    if (country) url += `&country=${country}`;
 
     http.get(url.toString(), { tags: { name: "ad" } });
 }
