@@ -56,13 +56,17 @@ graph TD
 
 ## Result
 
-I used K6 for load testing, and the result is quite good for the first iteration in DevContainer.
+I used K6 for load testing.
 
 Environment:
 - MacBook Pro M1 Pro 16GB, DevContainer (5 cores)
 - Go 1.21.7
 - MongoDB 7.0.2
 - K6 0.49.0
+
+### First Iteration
+
+The result is quite good for the first iteration in DevContainer.
 
 ```bash
 scenarios: (100.00%) 1 scenario, 300 max VUs, 40s max duration (incl. graceful stop):
@@ -89,3 +93,36 @@ vus_max........................: 300    min=300       max=300
 
 7K RPS, with less than 100% CPU usage for the server (K6 consumes the rest, 300%+, totaling 500% for 5 cores)
 I believe the number can be doubled outside the DevContainer.
+
+### Second Iteration
+
+After some side work on k6 and disabling the debug log, the result is blazing fast compared to the first iteration.
+
+> The k6 URL builder and logger IO caused the server cannot use all the CPU power.
+
+```
+scenarios: (100.00%) 1 scenario, 500 max VUs, 40s max duration (incl. graceful stop):
+        * default: 500 looping VUs for 10s (gracefulStop: 30s)
+
+
+data_received..................: 869 MB 87 MB/s
+data_sent......................: 46 MB  4.6 MB/s
+http_req_blocked...............: avg=15.99µs  min=250ns   med=417ns  max=41.18ms  p(90)=834ns   p(95)=1.16µs 
+http_req_connecting............: avg=10.41µs  min=0s      med=0s     max=31.58ms  p(90)=0s      p(95)=0s     
+http_req_duration..............: avg=15.03ms  min=49.95µs med=6.4ms  max=154.56ms p(90)=42.5ms  p(95)=54.04ms
+{ expected_response:true }...: avg=15.03ms  min=49.95µs med=6.4ms  max=154.56ms p(90)=42.5ms  p(95)=54.04ms
+http_req_failed................: 0.00%  ✓ 0            ✗ 323240
+http_req_receiving.............: avg=844.43µs min=3.29µs  med=7.5µs  max=59.84ms  p(90)=58.7µs  p(95)=2.73ms 
+http_req_sending...............: avg=36.36µs  min=1.37µs  med=2.29µs max=72.13ms  p(90)=4.29µs  p(95)=14.79µs
+http_req_tls_handshaking.......: avg=0s       min=0s      med=0s     max=0s       p(90)=0s      p(95)=0s     
+http_req_waiting...............: avg=14.15ms  min=43.12µs med=6.28ms max=140.83ms p(90)=39.69ms p(95)=48.96ms
+http_reqs......................: 323240 32266.303532/s
+iteration_duration.............: avg=15.41ms  min=65.37µs med=6.73ms max=154.58ms p(90)=43.03ms p(95)=54.67ms
+iterations.....................: 323240 32266.303532/s
+vus............................: 500    min=500        max=500 
+vus_max........................: 500    min=500        max=500
+```
+
+32K RPS, with 250% CPU usage for the server (K6 consumes the rest, 200%+, totaling 500% for 5 cores)
+
+> Note: VUS has been increased from 300 to 500.
