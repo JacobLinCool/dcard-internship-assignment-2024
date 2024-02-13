@@ -30,102 +30,115 @@ var (
 	cache = Cache{}
 )
 
-func cacheUpdater(ttl time.Duration) {
-	for {
-		log.Println("Updating cache")
-		now := time.Now()
+// Updates the cache with active ads from the database.
+// It fetches ads that are currently active based on the start and end time,
+// and populates various indexes for efficient querying.
+// The updated cache is stored in the global `cache` variable.
+// Returns `true` if the cache update is successful, `false` otherwise.
+func updateCache() bool {
+	log.Println("Updating cache")
+	now := time.Now()
 
-		filter := bson.M{
-			"startat": bson.M{"$lte": now},
-			"endat":   bson.M{"$gte": now},
-		}
-		opts := options.Find().SetSort(bson.D{{Key: "startat", Value: 1}})
+	filter := bson.M{
+		"startat": bson.M{"$lte": now},
+		"endat":   bson.M{"$gte": now},
+	}
+	opts := options.Find().SetSort(bson.D{{Key: "startat", Value: 1}})
 
-		cur, err := ads.Find(context.Background(), filter, opts)
-		if err != nil {
-			log.Println("Error fetching active ads from DB:", err)
+	cur, err := ads.Find(context.Background(), filter, opts)
+	if err != nil {
+		log.Println("Error fetching active ads from DB:", err)
+		return false
+	}
+
+	var results []Ad
+	for cur.Next(context.Background()) {
+		var ad Ad
+		if err := cur.Decode(&ad); err != nil {
+			log.Println("Error decoding ad:", err)
 			continue
 		}
+		results = append(results, ad)
+	}
 
-		var results []Ad
-		for cur.Next(context.Background()) {
-			var ad Ad
-			if err := cur.Decode(&ad); err != nil {
-				log.Println("Error decoding ad:", err)
-				continue
-			}
-			results = append(results, ad)
+	if err := cur.Err(); err != nil {
+		log.Println("Cursor error:", err)
+	}
+	cur.Close(context.Background())
+
+	cachedAds := make([]*CachedAd, 0, len(results))
+	genderIndex := make(map[string](map[*CachedAd]bool))
+	countryIndex := make(map[string](map[*CachedAd]bool))
+	platformIndex := make(map[string](map[*CachedAd]bool))
+	ageIndex := make([]([]*CachedAd), 101)
+	for _, ad := range results {
+		cachedAd := &CachedAd{
+			ad:       ad,
+			gender:   make(map[string]bool),
+			country:  make(map[string]bool),
+			platform: make(map[string]bool),
 		}
 
-		if err := cur.Err(); err != nil {
-			log.Println("Cursor error:", err)
-		}
-		cur.Close(context.Background())
-
-		cachedAds := make([]*CachedAd, 0, len(results))
-		genderIndex := make(map[string](map[*CachedAd]bool))
-		countryIndex := make(map[string](map[*CachedAd]bool))
-		platformIndex := make(map[string](map[*CachedAd]bool))
-		ageIndex := make([]([]*CachedAd), 101)
-		for _, ad := range results {
-			cachedAd := &CachedAd{
-				ad:       ad,
-				gender:   make(map[string]bool),
-				country:  make(map[string]bool),
-				platform: make(map[string]bool),
-			}
-
-			if ad.Conditions.Gender != nil {
-				for _, g := range *ad.Conditions.Gender {
-					if genderIndex[g] == nil {
-						genderIndex[g] = make(map[*CachedAd]bool)
-					}
-					genderIndex[g][cachedAd] = true
-					cachedAd.gender[g] = true
+		if ad.Conditions.Gender != nil {
+			for _, g := range *ad.Conditions.Gender {
+				if genderIndex[g] == nil {
+					genderIndex[g] = make(map[*CachedAd]bool)
 				}
+				genderIndex[g][cachedAd] = true
+				cachedAd.gender[g] = true
 			}
-
-			if ad.Conditions.Country != nil {
-				for _, c := range *ad.Conditions.Country {
-					if countryIndex[c] == nil {
-						countryIndex[c] = make(map[*CachedAd]bool)
-					}
-					countryIndex[c][cachedAd] = true
-					cachedAd.country[c] = true
-				}
-			}
-
-			if ad.Conditions.Platform != nil {
-				for _, p := range *ad.Conditions.Platform {
-					if platformIndex[p] == nil {
-						platformIndex[p] = make(map[*CachedAd]bool)
-					}
-					platformIndex[p][cachedAd] = true
-					cachedAd.platform[p] = true
-				}
-			}
-
-			if ad.Conditions.AgeStart != nil && ad.Conditions.AgeEnd != nil {
-				for age := *ad.Conditions.AgeStart; age <= *ad.Conditions.AgeEnd; age++ {
-					if ageIndex[age] == nil {
-						ageIndex[age] = make([]*CachedAd, 0)
-					}
-					ageIndex[age] = append(ageIndex[age], cachedAd)
-				}
-			}
-
-			cachedAds = append(cachedAds, cachedAd)
 		}
 
-		cache.lock.Lock()
-		cache.genderIndex = genderIndex
-		cache.countryIndex = countryIndex
-		cache.platformIndex = platformIndex
-		cache.ageIndex = ageIndex
-		cache.ads = cachedAds
-		cache.lock.Unlock()
+		if ad.Conditions.Country != nil {
+			for _, c := range *ad.Conditions.Country {
+				if countryIndex[c] == nil {
+					countryIndex[c] = make(map[*CachedAd]bool)
+				}
+				countryIndex[c][cachedAd] = true
+				cachedAd.country[c] = true
+			}
+		}
 
-		log.Println("Cache updated", len(results), "ads")
+		if ad.Conditions.Platform != nil {
+			for _, p := range *ad.Conditions.Platform {
+				if platformIndex[p] == nil {
+					platformIndex[p] = make(map[*CachedAd]bool)
+				}
+				platformIndex[p][cachedAd] = true
+				cachedAd.platform[p] = true
+			}
+		}
+
+		if ad.Conditions.AgeStart != nil && ad.Conditions.AgeEnd != nil {
+			for age := *ad.Conditions.AgeStart; age <= *ad.Conditions.AgeEnd; age++ {
+				if ageIndex[age] == nil {
+					ageIndex[age] = make([]*CachedAd, 0)
+				}
+				ageIndex[age] = append(ageIndex[age], cachedAd)
+			}
+		}
+
+		cachedAds = append(cachedAds, cachedAd)
+	}
+
+	cache.lock.Lock()
+	cache.genderIndex = genderIndex
+	cache.countryIndex = countryIndex
+	cache.platformIndex = platformIndex
+	cache.ageIndex = ageIndex
+	cache.ads = cachedAds
+	cache.lock.Unlock()
+
+	log.Println("Cache updated", len(results), "ads")
+	return true
+}
+
+// Periodically updates the cache by calling the updateCache function.
+// It runs in a loop and sleeps for the specified time duration (ttl) between each update.
+// The ttl parameter determines the interval at which the cache is updated.
+func cacheUpdater(ttl time.Duration) {
+	for {
+		updateCache()
 		time.Sleep(ttl)
 	}
 }
