@@ -124,7 +124,6 @@ func sendAd(ad *AdPayload) {
 	}
 	defer resp.Body.Close()
 
-	// Log the response status for confirmation
 	fmt.Println("Ad sent with response status:", resp.Status)
 }
 

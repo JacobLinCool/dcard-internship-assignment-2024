@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
@@ -26,17 +27,9 @@ type Cache struct {
 	lock          sync.RWMutex
 }
 
-var (
-	cache = Cache{}
-)
-
-// Updates the cache with active ads from the database.
-// It fetches ads that are currently active based on the start and end time,
-// and populates various indexes for efficient querying.
-// The updated cache is stored in the global `cache` variable.
-// Returns `true` if the cache update is successful, `false` otherwise.
-func updateCache() bool {
-	log.Println("Updating cache")
+// updateFromCollection updates the cache with active ads from the given MongoDB Collection.
+// Returns true if the update is successful, false otherwise.
+func (cache *Cache) updateFromCollection(coll *mongo.Collection) bool {
 	now := time.Now()
 
 	filter := bson.M{
@@ -45,7 +38,7 @@ func updateCache() bool {
 	}
 	opts := options.Find().SetSort(bson.D{{Key: "startat", Value: 1}})
 
-	cur, err := ads.Find(context.Background(), filter, opts)
+	cur, err := coll.Find(context.Background(), filter, opts)
 	if err != nil {
 		log.Println("Error fetching active ads from DB:", err)
 		return false
@@ -66,12 +59,25 @@ func updateCache() bool {
 	}
 	cur.Close(context.Background())
 
-	cachedAds := make([]*CachedAd, 0, len(results))
+	cache.update(results)
+
+	return true
+}
+
+// update updates the cache with the given ads.
+// It populates the genderIndex, countryIndex, platformIndex, ageIndex, and ads fields of the Cache.
+// The ads parameter is a slice of Ad structs representing the ads to be added to the cache.
+// Each ad is processed to update the corresponding indexes and maps in the cache.
+// The function is thread-safe and uses a lock to ensure concurrent access to the cache is synchronized.
+func (cache *Cache) update(ads []Ad) {
+	log.Println("Updating cache ...")
+
+	cachedAds := make([]*CachedAd, 0, len(ads))
 	genderIndex := make(map[string](map[*CachedAd]bool))
 	countryIndex := make(map[string](map[*CachedAd]bool))
 	platformIndex := make(map[string](map[*CachedAd]bool))
 	ageIndex := make([]([]*CachedAd), 101)
-	for _, ad := range results {
+	for _, ad := range ads {
 		cachedAd := &CachedAd{
 			ad:       ad,
 			gender:   make(map[string]bool),
@@ -129,21 +135,21 @@ func updateCache() bool {
 	cache.ads = cachedAds
 	cache.lock.Unlock()
 
-	log.Println("Cache updated", len(results), "ads")
-	return true
+	log.Println("Cache updated", len(cache.ads), "ads")
 }
 
-// Periodically updates the cache by calling the updateCache function.
-// It runs in a loop and sleeps for the specified time duration (ttl) between each update.
-// The ttl parameter determines the interval at which the cache is updated.
-func cacheUpdater(ttl time.Duration) {
+// Continuously updates the cache from the collection of ads at the specified time interval.
+// It takes a TTL duration as a parameter determines how often the cache should be updated.
+// The updater function runs indefinitely.
+func (cache *Cache) updater(ttl time.Duration) {
 	for {
-		updateCache()
+		cache.updateFromCollection(ads)
 		time.Sleep(ttl)
 	}
 }
 
-func filterFromCache(query AdQuery) []Ad {
+// filter applies the given query to the cache and returns a list of matching ads.
+func (cache *Cache) filter(query AdQuery) []Ad {
 	cache.lock.RLock()
 	defer cache.lock.RUnlock()
 

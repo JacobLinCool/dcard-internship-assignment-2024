@@ -32,6 +32,6 @@ func listAdsHandler(c *gin.Context) {
 		return
 	}
 
-	results := filterFromCache(query)
+	results := cache.filter(query)
 	c.JSON(http.StatusOK, results)
 }

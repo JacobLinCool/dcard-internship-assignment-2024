@@ -9,6 +9,10 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+var (
+	cache = Cache{}
+)
+
 func main() {
 	initDatabaseConnection()
 
@@ -26,7 +30,7 @@ func main() {
 		log.Fatalf("Failed to parse cache TTL: %v", err)
 	}
 
-	go cacheUpdater(time.Second * time.Duration(ttlInt))
+	go cache.updater(time.Second * time.Duration(ttlInt))
 
 	router := gin.New()
 	router.Use(gin.Recovery())
