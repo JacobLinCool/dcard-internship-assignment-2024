@@ -29,7 +29,7 @@ type Cache struct {
 
 // updateFromCollection updates the cache with active ads from the given MongoDB Collection.
 // Returns true if the update is successful, false otherwise.
-func (cache *Cache) updateFromCollection(coll *mongo.Collection) bool {
+func (cache *Cache) UpdateFromCollection(coll *mongo.Collection) bool {
 	now := time.Now()
 
 	filter := bson.M{
@@ -59,7 +59,7 @@ func (cache *Cache) updateFromCollection(coll *mongo.Collection) bool {
 	}
 	cur.Close(context.Background())
 
-	cache.update(results)
+	cache.Update(results)
 
 	return true
 }
@@ -69,7 +69,7 @@ func (cache *Cache) updateFromCollection(coll *mongo.Collection) bool {
 // The ads parameter is a slice of Ad structs representing the ads to be added to the cache.
 // Each ad is processed to update the corresponding indexes and maps in the cache.
 // The function is thread-safe and uses a lock to ensure concurrent access to the cache is synchronized.
-func (cache *Cache) update(ads []Ad) {
+func (cache *Cache) Update(ads []Ad) {
 	log.Println("Updating cache ...")
 
 	cachedAds := make([]*CachedAd, 0, len(ads))
@@ -141,15 +141,15 @@ func (cache *Cache) update(ads []Ad) {
 // Continuously updates the cache from the collection of ads at the specified time interval.
 // It takes a TTL duration as a parameter determines how often the cache should be updated.
 // The updater function runs indefinitely.
-func (cache *Cache) updater(ttl time.Duration) {
+func (cache *Cache) Updater(ttl time.Duration) {
 	for {
-		cache.updateFromCollection(ads)
+		cache.UpdateFromCollection(ads)
 		time.Sleep(ttl)
 	}
 }
 
 // filter applies the given query to the cache and returns a list of matching ads.
-func (cache *Cache) filter(query AdQuery) []Ad {
+func (cache *Cache) Filter(query AdQuery) []Ad {
 	cache.lock.RLock()
 	defer cache.lock.RUnlock()
 

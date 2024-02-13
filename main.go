@@ -30,7 +30,7 @@ func main() {
 		log.Fatalf("Failed to parse cache TTL: %v", err)
 	}
 
-	go cache.updater(time.Second * time.Duration(ttlInt))
+	go cache.Updater(time.Second * time.Duration(ttlInt))
 
 	router := gin.New()
 	router.Use(gin.Recovery())

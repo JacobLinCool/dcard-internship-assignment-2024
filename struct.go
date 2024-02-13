@@ -4,17 +4,19 @@ import (
 	"time"
 )
 
+type AdConditions struct {
+	AgeStart *int      `json:"ageStart,omitempty" binding:"omitempty,gte=0,lte=100"`
+	AgeEnd   *int      `json:"ageEnd,omitempty" binding:"omitempty,gte=0,lte=100"`
+	Gender   *[]string `json:"gender,omitempty" binding:"omitempty,unique,dive,oneof=M F"`
+	Country  *[]string `json:"country,omitempty" binding:"omitempty,unique,dive,len=2,iso3166_1_alpha2"`
+	Platform *[]string `json:"platform,omitempty" binding:"omitempty,unique,dive,oneof=android ios web"`
+}
+
 type Ad struct {
-	Title      string    `json:"title" binding:"required,min=1,max=100"`
-	StartAt    time.Time `json:"startAt" binding:"required"`
-	EndAt      time.Time `json:"endAt" binding:"required"`
-	Conditions struct {
-		AgeStart *int      `json:"ageStart,omitempty" binding:"omitempty,gte=0,lte=100"`
-		AgeEnd   *int      `json:"ageEnd,omitempty" binding:"omitempty,gte=0,lte=100"`
-		Gender   *[]string `json:"gender,omitempty" binding:"omitempty,unique,dive,oneof=M F"`
-		Country  *[]string `json:"country,omitempty" binding:"omitempty,unique,dive,len=2,iso3166_1_alpha2"`
-		Platform *[]string `json:"platform,omitempty" binding:"omitempty,unique,dive,oneof=android ios web"`
-	} `json:"conditions,omitempty" binding:"omitempty"`
+	Title      string       `json:"title" binding:"required,min=1,max=100"`
+	StartAt    time.Time    `json:"startAt" binding:"required"`
+	EndAt      time.Time    `json:"endAt" binding:"required"`
+	Conditions AdConditions `json:"conditions,omitempty" binding:"omitempty"`
 }
 
 type AdQuery struct {
