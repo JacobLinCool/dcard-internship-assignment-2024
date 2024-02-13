@@ -62,7 +62,7 @@ func cacheUpdater(ttl time.Duration) {
 		}
 		cur.Close(context.Background())
 
-		cachedAds := make([]*CachedAd, len(results))
+		cachedAds := make([]*CachedAd, 0, len(results))
 		genderIndex := make(map[string](map[*CachedAd]bool))
 		countryIndex := make(map[string](map[*CachedAd]bool))
 		platformIndex := make(map[string](map[*CachedAd]bool))
