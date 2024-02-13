@@ -82,7 +82,7 @@ data_sent......................: 10 MB  1.0 MB/s
 http_req_blocked...............: avg=173.72µs min=375ns    med=792ns   max=175.38ms p(90)=1.87µs  p(95)=2.7µs   
 http_req_connecting............: avg=164.91µs min=0s       med=0s      max=141.21ms p(90)=0s      p(95)=0s      
 http_req_duration..............: avg=39.91ms  min=126.2µs  med=34.89ms max=214.87ms p(90)=66.72ms p(95)=78.79ms 
-{ expected_response:true }...: avg=39.91ms  min=126.2µs  med=34.89ms max=214.87ms p(90)=66.72ms p(95)=78.79ms 
+  { expected_response:true }...: avg=39.91ms  min=126.2µs  med=34.89ms max=214.87ms p(90)=66.72ms p(95)=78.79ms 
 http_req_failed................: 0.00%  ✓ 0           ✗ 71399
 http_req_receiving.............: avg=662.3µs  min=4.7µs    med=13.16µs max=157.87ms p(90)=70.83µs p(95)=163.75µs
 http_req_sending...............: avg=105.1µs  min=2µs      med=4.2µs   max=137.76ms p(90)=11.54µs p(95)=28.54µs 
@@ -114,7 +114,7 @@ data_sent......................: 46 MB  4.6 MB/s
 http_req_blocked...............: avg=15.99µs  min=250ns   med=417ns  max=41.18ms  p(90)=834ns   p(95)=1.16µs 
 http_req_connecting............: avg=10.41µs  min=0s      med=0s     max=31.58ms  p(90)=0s      p(95)=0s     
 http_req_duration..............: avg=15.03ms  min=49.95µs med=6.4ms  max=154.56ms p(90)=42.5ms  p(95)=54.04ms
-{ expected_response:true }...: avg=15.03ms  min=49.95µs med=6.4ms  max=154.56ms p(90)=42.5ms  p(95)=54.04ms
+  { expected_response:true }...: avg=15.03ms  min=49.95µs med=6.4ms  max=154.56ms p(90)=42.5ms  p(95)=54.04ms
 http_req_failed................: 0.00%  ✓ 0            ✗ 323240
 http_req_receiving.............: avg=844.43µs min=3.29µs  med=7.5µs  max=59.84ms  p(90)=58.7µs  p(95)=2.73ms 
 http_req_sending...............: avg=36.36µs  min=1.37µs  med=2.29µs max=72.13ms  p(90)=4.29µs  p(95)=14.79µs
@@ -145,7 +145,7 @@ data_sent......................: 58 MB  5.8 MB/s
 http_req_blocked...............: avg=21.11µs  min=250ns   med=416ns  max=41.4ms   p(90)=792ns   p(95)=1.12µs  
 http_req_connecting............: avg=17.6µs   min=0s      med=0s     max=29.93ms  p(90)=0s      p(95)=0s      
 http_req_duration..............: avg=11.82ms  min=29.54µs med=5.89ms max=124.07ms p(90)=30.98ms p(95)=39.29ms 
-{ expected_response:true }...: avg=11.82ms  min=29.54µs med=5.89ms max=124.07ms p(90)=30.98ms p(95)=39.29ms 
+  { expected_response:true }...: avg=11.82ms  min=29.54µs med=5.89ms max=124.07ms p(90)=30.98ms p(95)=39.29ms 
 http_req_failed................: 0.00%  ✓ 0            ✗ 406790
 http_req_receiving.............: avg=529.52µs min=3.25µs  med=6.29µs max=48.1ms   p(90)=24.58µs p(95)=145.58µs
 http_req_sending...............: avg=25.22µs  min=1.37µs  med=2.29µs max=51ms     p(90)=3.91µs  p(95)=12.58µs 
@@ -159,6 +159,67 @@ vus_max........................: 500    min=500        max=500
 ```
 
 40K RPS, with ~200% CPU usage for the server (K6 consumes the rest ~250%, totaling 500% for 5 cores)
+
+### Other Observations
+
+In addition to the previous results, I noticed that after restarting the Docker engine, the RPS increased to around 45K while maintaining the same CPU usage.
+
+When running the application outside the DevContainer on my MBP, the RPS reached approximately 60K with around 300% CPU usage. The memory usage remained low, around 25MB when idle and 50MB under load.
+
+Furthermore, I conducted another test by simulating 10,000 active ads, which is 10x the original number. This test was performed within the same DevContainer environment.
+
+- The memory usage increased to around 60MB when idle and 100MB under load.
+- The RPS achieved was approximately 17K with a CPU usage of around 300%.
+
+```
+scenarios: (100.00%) 1 scenario, 500 max VUs, 40s max duration (incl. graceful stop):
+        * default: 500 looping VUs for 10s (gracefulStop: 30s)
+
+
+data_received..................: 627 MB 63 MB/s
+data_sent......................: 24 MB  2.4 MB/s
+http_req_blocked...............: avg=16.26µs min=291ns  med=458ns  max=31.37ms  p(90)=792ns    p(95)=1.08µs  
+http_req_connecting............: avg=12.05µs min=0s     med=0s     max=13.32ms  p(90)=0s       p(95)=0s      
+http_req_duration..............: avg=28.94ms min=7.95µs med=5.87ms max=382.99ms p(90)=101.56ms p(95)=121.13ms
+  { expected_response:true }...: avg=28.94ms min=7.95µs med=5.87ms max=382.99ms p(90)=101.56ms p(95)=121.13ms
+http_req_failed................: 0.00%  ✓ 0            ✗ 172140
+http_req_receiving.............: avg=99.62µs min=3.41µs med=9.29µs max=47.12ms  p(90)=23.75µs  p(95)=59.62µs 
+http_req_sending...............: avg=12.92µs min=1.37µs med=2.25µs max=36.39ms  p(90)=3.7µs    p(95)=7.62µs  
+http_req_tls_handshaking.......: avg=0s      min=0s     med=0s     max=0s       p(90)=0s       p(95)=0s      
+http_req_waiting...............: avg=28.83ms min=0s     med=5.82ms max=382.98ms p(90)=101.4ms  p(95)=120.94ms
+http_reqs......................: 172140 17183.435768/s
+iteration_duration.............: avg=29.04ms min=51µs   med=5.92ms max=383.01ms p(90)=101.85ms p(95)=121.2ms 
+iterations.....................: 172140 17183.435768/s
+vus............................: 500    min=500        max=500 
+vus_max........................: 500    min=500        max=500
+```
+
+## Conclusion
+
+| Scenario          | RPS | CPU Usage | Memory Usage (idle / loaded) | Environment                            |
+| ----------------- | --- | --------- | ---------------------------- | -------------------------------------- |
+| 1,000 Active Ads  | 40K | ~200%     | 25MB / 50MB                  | DevContainer (5 cores), MBP M1 Pro 16G |
+| 1,000 Active Ads  | 60K | ~300%     | -                            | MBP M1 Pro 16G                         |
+| 10,000 Active Ads | 17K | ~300%     | 60MB / 100MB                 | DevContainer (5 cores), MBP M1 Pro 16G |
+
+The architecture is designed to be simple, efficient, and easily scalable by adding additional server nodes. To handle a larger number of ADs, sharding by region (country) can be implemented.
+
+```mermaid
+graph TD
+    DB[Database]
+    S1["Server (TW)"]
+    S2["Server (JP)"]
+    S3["Server (US)"]
+    M1["Local Cache (TW)"]
+    M2["Local Cache (JP)"]
+    M3["Local Cache (US)"]
+    S1 -->|Write| DB -->|Update| M1
+    S2 -->|Write| DB -->|Update| M2
+    S3 -->|Write| DB -->|Update| M3
+    M1 -->|Cached| S1
+    M2 -->|Cached| S2
+    M3 -->|Cached| S3
+```
 
 ## TODO
 
