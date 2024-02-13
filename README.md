@@ -1,6 +1,8 @@
 # Dcard Internship Assignment 2024
 
-Golang + MongoDB
+Golang + MongoDB: 40K RPS API Server<sup>*</sup>
+
+> <sup>*</sup> 40K RPS, 200% CPU usage in docker container on MBP M1 Pro 16GB, see [Third Iteration](#third-iteration)
 
 ## Assignment
 
@@ -126,3 +128,32 @@ vus_max........................: 500    min=500        max=500
 32K RPS, with 250% CPU usage for the server (K6 consumes the rest, 200%+, totaling 500% for 5 cores)
 
 > Note: VUS has been increased from 300 to 500.
+
+### Third Iteration
+
+After implementing some indexes for in-memory cache, 40K RPS is achieved.
+
+```
+scenarios: (100.00%) 1 scenario, 500 max VUs, 40s max duration (incl. graceful stop):
+        * default: 500 looping VUs for 10s (gracefulStop: 30s)
+
+
+data_received..................: 253 MB 25 MB/s
+data_sent......................: 58 MB  5.8 MB/s
+http_req_blocked...............: avg=21.11µs  min=250ns   med=416ns  max=41.4ms   p(90)=792ns   p(95)=1.12µs  
+http_req_connecting............: avg=17.6µs   min=0s      med=0s     max=29.93ms  p(90)=0s      p(95)=0s      
+http_req_duration..............: avg=11.82ms  min=29.54µs med=5.89ms max=124.07ms p(90)=30.98ms p(95)=39.29ms 
+{ expected_response:true }...: avg=11.82ms  min=29.54µs med=5.89ms max=124.07ms p(90)=30.98ms p(95)=39.29ms 
+http_req_failed................: 0.00%  ✓ 0            ✗ 406790
+http_req_receiving.............: avg=529.52µs min=3.25µs  med=6.29µs max=48.1ms   p(90)=24.58µs p(95)=145.58µs
+http_req_sending...............: avg=25.22µs  min=1.37µs  med=2.29µs max=51ms     p(90)=3.91µs  p(95)=12.58µs 
+http_req_tls_handshaking.......: avg=0s       min=0s      med=0s     max=0s       p(90)=0s      p(95)=0s      
+http_req_waiting...............: avg=11.27ms  min=23.33µs med=5.83ms max=117.43ms p(90)=29.39ms p(95)=35.63ms 
+http_reqs......................: 406790 40651.191179/s
+iteration_duration.............: avg=12.21ms  min=45.95µs med=6.31ms max=124.09ms p(90)=31.58ms p(95)=40.25ms 
+iterations.....................: 406790 40651.191179/s
+vus............................: 500    min=500        max=500 
+vus_max........................: 500    min=500        max=500
+```
+
+40K RPS, with ~200% CPU usage for the server (K6 consumes the rest ~250%, totaling 500% for 5 cores)
