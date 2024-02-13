@@ -1,0 +1,39 @@
+name: Test
+on:
+    push:
+        branches:
+            - main
+    pull_request:
+        branches:
+            - main
+
+jobs:
+    test:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - name: Setup Go
+              uses: actions/setup-go@v5
+              with:
+                  go-version: "1.21.7"
+            - run: go test -v
+            - run: go build .
+
+    stress-test:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - name: Setup Go
+              uses: actions/setup-go@v5
+              with:
+                  go-version: "1.21.7"
+            - name: Build service and run stress test
+              run: |
+                cd deployment/docker-compose
+                cp .env.example .env
+                docker compose up -d --build
+                cd ../../
+                sleep 10
+                go run scripts/seed.go 2000
+                curl https://github.com/grafana/k6/releases/download/v0.47.0/k6-v0.47.0-linux-amd64.tar.gz -L | tar xvz --strip-components 1
+                ./k6 run scripts/stress.js
