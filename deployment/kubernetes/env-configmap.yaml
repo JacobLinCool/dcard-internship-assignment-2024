@@ -1,0 +1,10 @@
+apiVersion: v1
+data:
+  AD_SERVICE_CACHE_TTL: "1"
+  AD_SERVICE_PORT: "8080"
+  MONGODB_URI: mongodb://mongo:27017
+kind: ConfigMap
+metadata:
+  labels:
+    io.kompose.service: server-env
+  name: env

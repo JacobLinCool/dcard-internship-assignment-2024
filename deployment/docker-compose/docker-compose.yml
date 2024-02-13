@@ -1,0 +1,23 @@
+version: '3.8'
+
+volumes:
+  mongo-data:
+
+services:
+  server:
+    image: ghcr.io/jacoblincool/ad-service-dcard-2024
+    build: 
+      context: ../..
+      dockerfile: Dockerfile
+    env_file:
+        - .env
+    environment:
+      - GIN_MODE=release
+    ports:
+      - "${AD_SERVICE_PORT}:${AD_SERVICE_PORT}"
+
+  mongo:
+    image: mongo:latest
+    restart: unless-stopped
+    volumes:
+      - mongo-data:/data/db

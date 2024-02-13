@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -o ../kubernetes/
+    kompose.version: 1.32.0 (HEAD)
+  labels:
+    io.kompose.service: server
+  name: server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: server
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert -o ../kubernetes/
+        kompose.version: 1.32.0 (HEAD)
+      labels:
+        io.kompose.network/docker-compose-default: "true"
+        io.kompose.service: server
+    spec:
+      containers:
+        - env:
+            - name: AD_SERVICE_CACHE_TTL
+              valueFrom:
+                configMapKeyRef:
+                  key: AD_SERVICE_CACHE_TTL
+                  name: env
+            - name: AD_SERVICE_PORT
+              valueFrom:
+                configMapKeyRef:
+                  key: AD_SERVICE_PORT
+                  name: env
+            - name: GIN_MODE
+              value: release
+            - name: MONGODB_URI
+              valueFrom:
+                configMapKeyRef:
+                  key: MONGODB_URI
+                  name: env
+          image: jacoblincool/ad-service-dcard-2024
+          name: server
+          ports:
+            - containerPort: 8080
+              hostPort: 8080
+              protocol: TCP
+      restartPolicy: Always
