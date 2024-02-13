@@ -10,6 +10,8 @@ The assignment can be found here: <https://drive.google.com/file/d/1dnDiBDen7Frz
 
 TL;DR: Create a simple advertisement HTTP API server using Golang. External libraries and tools are allowed.
 
+> It seems a quite fun project for me to refresh my Golang and MongoDB knowledge.
+
 ## Analysis
 
 Numbers go first.
@@ -157,3 +159,9 @@ vus_max........................: 500    min=500        max=500
 ```
 
 40K RPS, with ~200% CPU usage for the server (K6 consumes the rest ~250%, totaling 500% for 5 cores)
+
+## TODO
+
+- [ ] GitHub Actions for CI/CD
+- [ ] Kubernetes deployment
+- [ ] Unit tests
