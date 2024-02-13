@@ -225,4 +225,3 @@ graph TD
 
 - [ ] GitHub Actions for CI/CD
 - [ ] Kubernetes deployment
-- [ ] Unit tests
