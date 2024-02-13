@@ -221,7 +221,7 @@ graph TD
     M3 -->|Cached| S3
 ```
 
-## TODO
+## Other stuff
 
-- [ ] GitHub Actions for CI/CD
-- [ ] Kubernetes deployment
+- CI/CD has been set up with GitHub Actions, and the Docker image is pushed to GitHub Container Registry.
+- Deployment is available in [`deployment`](./deployment) directory, including Docker Compose and Kubernetes.
